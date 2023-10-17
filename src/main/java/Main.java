@@ -1,9 +1,10 @@
 import models.Car;
+import models.DriverLicense;
+import models.Owner;
 import models.Type;
-import models.User;
-import models.Word;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
@@ -19,15 +20,29 @@ public class Main {
                 .build();
 
         Metadata metadata = new MetadataSources(serviceRegistry)
-                .addAnnotatedClass(User.class)
+                .addAnnotatedClass(Owner.class)
                 .addAnnotatedClass(Car.class)
-                .addAnnotatedClass(Word.class)
+                .addAnnotatedClass(DriverLicense.class)
                 .getMetadataBuilder()
                 .build();
 
-        SessionFactory sessionFactory = metadata.getSessionFactoryBuilder().build();
-        Session session = sessionFactory.openSession();
-        session.beginTransaction();
+
+        try (
+            SessionFactory sessionFactory = metadata.getSessionFactoryBuilder().build();
+            Session session = sessionFactory.openSession();
+        ) {
+            Transaction transaction = session.beginTransaction();
+            Owner owner = new Owner("Harry", new DriverLicense("C1"));
+            session.save(owner);
+
+            Car car = new Car("Volvo", Type.UNIVERSAL, 700, 150000, 2015, owner);
+            session.save(car);
+
+//            Car car = session.find(Car.class, 4);
+//            System.out.println(car);
+//            System.out.println(car.getOwner());
+            transaction.commit();
+        }
 
 //        User user = session.find(User.class, 1);
 //        System.out.println(user);
@@ -41,14 +56,5 @@ public class Main {
 //        session.save(new Word("Potter"));
 //        session.save(new Word("Ron"));
 //        session.save(new Word("Granger"));
-
-        List<Word> wordList = session.createQuery("select w from Word w", Word.class).list();
-        System.out.println(wordList);
-
-        session.getTransaction().commit();
-        session.close();
-        sessionFactory.close();
-
-
     }
 }
